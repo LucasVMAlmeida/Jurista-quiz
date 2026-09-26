@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jurista de Programa Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EEF3FA;
+    --paper: #FFFFFF;
+    --panel-2: #F6F9FD;
+    --ink: #16294B;
+    --muted: #57657F;
+    --brand: #1E4D8C;
+    --brand-dark: #123363;
+    --leaf: #3C8C55;
+    --leaf-soft: rgba(60,140,85,0.14);
+    --alert: #C24336;
+    --alert-soft: rgba(194,67,54,0.12);
+    --line: rgba(22,41,75,0.14);
+    --line-soft: rgba(22,41,75,0.08);
+    --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --font-body: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", "SF Mono", Consolas, monospace;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg: #0F1D33; --paper: #16294B; --panel-2: #1B3159; --ink: #EAF1FB;
+      --muted: #AAB8D6; --line: rgba(234,241,251,0.16); --line-soft: rgba(234,241,251,0.08);
+      --leaf-soft: rgba(95,201,140,0.18); --alert-soft: rgba(226,120,105,0.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg: #0F1D33; --paper: #16294B; --panel-2: #1B3159; --ink: #EAF1FB;
+    --muted: #AAB8D6; --line: rgba(234,241,251,0.16); --line-soft: rgba(234,241,251,0.08);
+    --leaf-soft: rgba(95,201,140,0.18); --alert-soft: rgba(226,120,105,0.16);
+  }
+  *{ box-sizing: border-box; }
+  html,body{
+    min-height:100%;
+    margin:0;
+    background: var(--bg);
+  }
+  html{ scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body{
+    font-family: var(--font-body);
+    color: var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: calc(28px + env(safe-area-inset-top, 0px)) 20px calc(28px + env(safe-area-inset-bottom, 0px));
+    background:
+      radial-gradient(1100px 700px at 84% -12%, rgba(30,77,140,0.10), transparent 60%),
+      radial-gradient(900px 600px at -10% 110%, rgba(60,140,85,0.10), transparent 55%),
+      var(--bg);
+    overflow-x:hidden;
+  }
+
+  /* faint circuit-trace backdrop */
+  .traces{
+    position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.6;
+  }
+
+  .stage{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width: min(880px, 94vw);
+  }
+
+  .frame{
+    background: linear-gradient(180deg, var(--paper), var(--panel-2));
+    border: 1px solid var(--line);
+    border-radius: 26px;
+    padding: clamp(30px, 5vw, 52px) clamp(24px, 5vw, 48px) clamp(26px, 4.5vw, 42px);
+    box-shadow: 0 30px 70px -35px rgba(22,41,75,0.35);
+    position:relative;
+    overflow:hidden;
+  }
+  .frame::before{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--brand), var(--leaf));
+  }
+
+  .masthead{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap: 12px;
+    margin-bottom: 22px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+  .masthead b{ color: var(--brand); font-weight: 600; }
+
+  h1{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(28px, 5vw, 40px);
+    line-height: 1.15;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+  .lede{
+    font-size: clamp(15.5px, 1.6vw, 17px);
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0 0 26px;
+    max-width: 52ch;
+  }
+
+  .btn{
+    font-family: var(--font-mono);
+    font-size: clamp(14px, 1.5vw, 15px);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 24px;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:focus-visible{ outline: 2px solid var(--brand); outline-offset: 3px; }
+  .btn-primary{
+    background: var(--brand);
+    color: #FFFFFF;
+    box-shadow: 0 10px 24px -10px rgba(30,77,140,0.45);
+  }
+  .btn-primary:hover{ transform: translateY(-1px); background: var(--brand-dark); }
+  .btn-ghost{
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .btn-ghost:hover{ color: var(--ink); border-color: var(--muted); }
+
+  /* --- progress --- */
+  .progress-row{
+    display:flex; align-items:center; gap: 14px;
+    margin-bottom: 22px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .progress-track{
+    flex:1;
+    height: 4px;
+    background: var(--line-soft);
+    border-radius: 3px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background: linear-gradient(90deg, var(--brand), var(--leaf));
+    border-radius: 3px;
+    transition: width 0.35s ease;
+  }
+
+  /* --- question --- */
+  .question{
+    font-family: var(--font-display);
+    font-size: clamp(20px, 3vw, 26px);
+    line-height: 1.35;
+    font-weight: 600;
+    margin: 0 0 22px;
+    color: var(--ink);
+  }
+  .tag{
+    display:inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+    border: 1px solid var(--line);
+    color: var(--muted);
+  }
+  .tag.stf{ color: var(--brand); border-color: rgba(30,77,140,0.35); }
+  .tag.dig{ color: var(--leaf); border-color: rgba(60,140,85,0.35); }
+
+  .options{
+    display:flex;
+    flex-direction:column;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .option{
+    text-align:left;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 16px 18px;
+    font-family: var(--font-body);
+    font-size: clamp(15px, 1.6vw, 16.5px);
+    line-height: 1.45;
+    cursor:pointer;
+    display:flex;
+    gap: 12px;
+    align-items:flex-start;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  }
+  .option:hover:not(:disabled){ border-color: var(--brand); transform: translateX(2px); }
+  .option:focus-visible{ outline: 2px solid var(--brand); outline-offset: 2px; }
+  .option .k{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    flex-shrink:0;
+    width: 18px;
+    padding-top: 1px;
+  }
+  .option:disabled{ cursor:default; }
+  .option.correct{
+    background: var(--leaf-soft);
+    border-color: var(--leaf);
+  }
+  .option.correct .k{ color: var(--leaf); }
+  .option.wrong{
+    background: var(--alert-soft);
+    border-color: var(--alert);
+  }
+  .option.wrong .k{ color: var(--alert); }
+  .option.dim{ opacity: 0.45; }
+
+  .feedback{
+    margin-top: 16px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--panel-2);
+    border-left: 3px solid var(--leaf);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--muted);
+    display:none;
+  }
+  .feedback.show{ display:block; }
+  .feedback.is-wrong{ border-left-color: var(--alert); }
+  .feedback strong{ color: var(--ink); font-weight: 600; }
+
+  .foot-row{
+    display:flex;
+    justify-content:flex-end;
+    margin-top: 22px;
+  }
+
+  /* --- start / end screens --- */
+  .center-block{ text-align:left; }
+  .score-display{
+    font-family: var(--font-mono);
+    font-size: 52px;
+    font-weight: 600;
+    color: var(--brand);
+    line-height:1;
+    margin: 4px 0 4px;
+  }
+  .score-of{
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--muted);
+  }
+  .verdict{
+    margin: 18px 0 24px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 48ch;
+  }
+  .qr-block{
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    display:flex;
+    align-items:center;
+    gap: 20px;
+  }
+  .qr-block img{
+    width: clamp(110px, 18vw, 168px);
+    height: clamp(110px, 18vw, 168px);
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: #FFFFFF;
+    padding: 8px;
+    flex-shrink: 0;
+  }
+  .qr-text{
+    font-size: clamp(13.5px, 1.5vw, 15.5px);
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .qr-text b{ color: var(--brand); font-weight: 600; font-size: 1.1em; }
+  .qr-text span{
+    display:block;
+    font-family: var(--font-mono);
+    font-size: clamp(12.5px, 1.3vw, 14px);
+    color: var(--ink);
+    margin-top: 4px;
+  }
+
+  .hidden{ display:none !important; }
+
+  @media (max-width: 420px){
+    .frame{ padding: 26px 20px 22px; border-radius: 18px; }
+    .qr-block{ flex-direction:column; align-items:flex-start; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="traces" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g fill="none" stroke="#1E4D8C" stroke-width="1" opacity="0.12">
+    <path d="M0 120 H180 L220 160 H420"/>
+    <path d="M800 220 H620 L580 260 H380 L340 300"/>
+    <path d="M0 600 H140 L180 640 H340 L380 680"/>
+    <path d="M800 700 H660 L620 660 H500"/>
+  </g>
+  <g fill="#3C8C55" opacity="0.4">
+    <circle cx="220" cy="160" r="3"/>
+    <circle cx="580" cy="260" r="3"/>
+    <circle cx="180" cy="640" r="3"/>
+    <circle cx="620" cy="660" r="3"/>
+  </g>
+</svg>
+
+<div class="stage">
+  <div class="frame">
+
+    <div class="masthead">
+      <span>estande <b>Juristas de Programa</b></span>
+      <span id="masthead-right">circuito de profissões</span>
+    </div>
+
+    <!-- START SCREEN -->
+    <div id="screen-start" class="center-block">
+      <h1>Jurista de Programa Quiz</h1>
+      <p class="lede">Você conhece seus direitos digitais? Um quiz rápido sobre o Supremo Tribunal Federal e sobre como pensar com mais crítica na internet — desinformação, dados pessoais, algoritmos e por aí vai. 16 perguntas, ida e volta.</p>
+      <button class="btn btn-primary" id="btn-start">Começar o quiz</button>
+    </div>
+
+    <!-- QUIZ SCREEN -->
+    <div id="screen-quiz" class="hidden">
+      <div class="progress-row">
+        <span id="progress-label">Pergunta 1 de 10</span>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
+        <span id="score-label">0 pts</span>
+      </div>
+
+      <span class="tag" id="q-tag">STF</span>
+      <p class="question" id="q-text">Carregando…</p>
+
+      <div class="options" id="q-options"></div>
+
+      <div class="feedback" id="q-feedback"></div>
+
+      <div class="foot-row">
+        <button class="btn btn-primary hidden" id="btn-next">Próxima pergunta</button>
+      </div>
+    </div>
+
+    <!-- END SCREEN -->
+    <div id="screen-end" class="hidden center-block">
+      <h1>Resultado</h1>
+      <div class="score-display"><span id="final-score">0</span><span class="score-of">/10</span></div>
+      <p class="verdict" id="verdict-text"></p>
+      <button class="btn btn-primary" id="btn-replay">Jogar de novo</button>
+      <div class="qr-block">
+        <img src="data:image/png;base64,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" alt="QR code para o site do Juristas de Programa">
+        <p class="qr-text"><b>Conheça o Juristas de Programa</b><span>juristas.vercel.app</span></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  const questions = [
+    {
+      tag: "STF",
+      text: "O que a sigla STF representa?",
+      options: [
+        "Supremo Tribunal Federal",
+        "Sistema Tributário Federal",
+        "Secretaria de Tecnologia e Fiscalização",
+        "Superior Tribunal Fiscal"
+      ],
+      correct: 0,
+      explain: "O STF é o Supremo Tribunal Federal, o mais alto órgão do Poder Judiciário brasileiro."
+    },
+    {
+      tag: "Digital",
+      text: "Antes de compartilhar uma notícia impactante nas redes sociais, a atitude mais crítica é:",
+      options: [
+        "Compartilhar rápido para avisar todo mundo",
+        "Verificar a fonte e buscar outras coberturas sobre o fato",
+        "Só compartilhar se muita gente já compartilhou",
+        "Confiar porque o título parece sério"
+      ],
+      correct: 1,
+      explain: "Checar a origem e comparar com outras fontes ajuda a evitar a propagação de desinformação."
+    },
+    {
+      tag: "STF",
+      text: "Qual é a principal função do STF?",
+      options: [
+        "Julgar apenas infrações de trânsito",
+        "Fiscalizar eleições municipais",
+        "Guardar e interpretar a Constituição Federal",
+        "Aprovar leis municipais"
+      ],
+      correct: 2,
+      explain: "O STF existe para ser o guardião da Constituição, julgando se leis e atos públicos respeitam seus princípios."
+    },
+    {
+      tag: "Digital",
+      text: 'O que é uma "bolha de filtro" (filter bubble)?',
+      options: [
+        "Um vírus que trava o celular",
+        "Um espaço só de conteúdos verificados por especialistas",
+        "O efeito de algoritmos que mostram principalmente conteúdo parecido com o que já curtimos",
+        "Um tipo de propaganda paga"
+      ],
+      correct: 2,
+      explain: "Ao aprender nossos gostos, as plataformas tendem a mostrar mais do mesmo, reduzindo o contato com pontos de vista diferentes."
+    },
+    {
+      tag: "STF",
+      text: "Quantos ministros compõem o STF atualmente?",
+      options: ["9", "11", "15", "7"],
+      correct: 1,
+      explain: "O STF é composto por 11 ministros, indicados pela Presidência da República e aprovados pelo Senado."
+    },
+    {
+      tag: "Digital",
+      text: "A LGPD (Lei Geral de Proteção de Dados) tem como objetivo principal:",
+      options: [
+        "Proibir o uso da internet por menores de idade",
+        "Regular a criação de sites do governo",
+        "Proteger os dados pessoais dos cidadãos e definir como empresas podem usá-los",
+        "Definir o valor de multas de trânsito"
+      ],
+      correct: 2,
+      explain: "A LGPD estabelece regras para a coleta, o uso e o armazenamento de dados pessoais no Brasil."
+    },
+    {
+      tag: "STF",
+      text: 'O que é "jurisprudência"?',
+      options: [
+        "Um curso de graduação em Direito",
+        "O conjunto de decisões reiteradas dos tribunais sobre um mesmo tema",
+        "Um tipo específico de processo eletrônico",
+        "Um cargo dentro do STF"
+      ],
+      correct: 1,
+      explain: "Jurisprudência é o entendimento consolidado que os tribunais formam ao julgar, repetidas vezes, casos parecidos."
+    },
+    {
+      tag: "Digital",
+      text: "Qual desses é um bom sinal de que um site de notícias pode ser confiável?",
+      options: [
+        "O site tem só um autor anônimo, sem data",
+        "O texto usa muitas letras maiúsculas e emojis",
+        "O site informa autoria, data e cita fontes que podem ser checadas",
+        'A notícia promete revelar "o que a mídia esconde"'
+      ],
+      correct: 2,
+      explain: "Transparência sobre autoria, data de publicação e fontes checáveis é um indicativo importante de credibilidade."
+    },
+    {
+      tag: "STF",
+      text: "O direito à privacidade e à proteção de dados pessoais está previsto em qual parte da Constituição?",
+      options: [
+        "No preâmbulo",
+        "Entre os direitos e garantias fundamentais (art. 5º)",
+        "Apenas em leis estaduais",
+        "Não está previsto na Constituição"
+      ],
+      correct: 1,
+      explain: "A privacidade é um direito fundamental garantido pelo art. 5º da Constituição, reforçado depois pela LGPD."
+    },
+    {
+      tag: "Digital",
+      text: '"Viés de confirmação" é a tendência de:',
+      options: [
+        "Corrigir erros ortográficos automaticamente",
+        "Buscar e acreditar mais facilmente em informações que já confirmam o que pensamos",
+        "Confirmar um cadastro por e-mail",
+        "Validar dados com dois fatores de autenticação"
+      ],
+      correct: 1,
+      explain: "O viés de confirmação nos leva a dar mais crédito ao que já concorda com nossas ideias — inclusive on-line."
+    },
+    {
+      tag: "Digital",
+      text: 'Um "dado pessoal", segundo a LGPD, é:',
+      options: [
+        "Qualquer informação que identifique ou possa identificar uma pessoa, como nome, CPF ou localização",
+        "Apenas o CPF e o RG",
+        "Só informações que a pessoa publica voluntariamente",
+        "Dados usados exclusivamente por bancos"
+      ],
+      correct: 0,
+      explain: "A LGPD trata como dado pessoal qualquer informação capaz de identificar, direta ou indiretamente, uma pessoa."
+    },
+    {
+      tag: "Digital",
+      text: 'O que caracteriza um ataque de "phishing"?',
+      options: [
+        "Um vírus que apaga arquivos do computador",
+        "Uma tentativa de enganar a vítima, geralmente por e-mail ou mensagem falsa, para que ela entregue senhas ou dados sensíveis",
+        "Uma falha de energia que derruba um site",
+        "Um tipo de propaganda paga nas redes sociais"
+      ],
+      correct: 1,
+      explain: "Phishing usa disfarces — mensagens, e-mails ou sites falsos — para induzir a vítima a fornecer informações sigilosas."
+    },
+    {
+      tag: "Digital",
+      text: 'Um "deepfake" é:',
+      options: [
+        "Um filtro de câmera que deixa fotos mais nítidas",
+        "Um vídeo, áudio ou imagem manipulado por IA para parecer real, mostrando algo que nunca aconteceu",
+        "Um tipo de vírus de computador",
+        "Uma senha muito difícil de quebrar"
+      ],
+      correct: 1,
+      explain: "Deepfakes usam inteligência artificial para simular falas ou cenas que nunca existiram — por isso pedem ainda mais cuidado ao avaliar vídeos que circulam on-line."
+    },
+    {
+      tag: "STF",
+      text: "O que é o Marco Civil da Internet?",
+      options: [
+        "Um tribunal especializado em crimes digitais",
+        "A lei brasileira que estabelece princípios, direitos e deveres para o uso da internet no país",
+        "Um órgão que fiscaliza provedores de internet",
+        "Um artigo da Constituição sobre telecomunicações"
+      ],
+      correct: 1,
+      explain: "O Marco Civil da Internet (Lei 12.965/2014) organiza direitos e deveres de usuários, empresas e provedores no Brasil."
+    },
+    {
+      tag: "STF",
+      text: 'Para que serve o "habeas data"?',
+      options: [
+        "Para soltar alguém preso ilegalmente",
+        "Para garantir à pessoa o direito de conhecer e corrigir informações sobre si em bancos de dados públicos",
+        "Para cancelar uma multa de trânsito",
+        "Para abrir um processo trabalhista"
+      ],
+      correct: 1,
+      explain: "Habeas data é a ação constitucional voltada especificamente ao acesso e à correção de dados sobre a própria pessoa mantidos por entidades públicas."
+    },
+    {
+      tag: "STF",
+      text: 'O que é "repercussão geral" no STF?',
+      options: [
+        "Um prazo para recorrer de qualquer decisão",
+        "O critério que o STF usa para selecionar casos com relevância suficiente para gerar uma decisão de referência a casos parecidos",
+        "O número de processos julgados por ano",
+        "Um tipo de recurso exclusivo para causas trabalhistas"
+      ],
+      correct: 1,
+      explain: "A repercussão geral filtra quais temas têm relevância jurídica, política, social ou econômica para merecer uma decisão que oriente casos semelhantes."
+    }
+  ];
+
+  let current = 0;
+  let score = 0;
+  let answered = false;
+
+  const screenStart = document.getElementById('screen-start');
+  const screenQuiz = document.getElementById('screen-quiz');
+  const screenEnd = document.getElementById('screen-end');
+
+  const qTag = document.getElementById('q-tag');
+  const qText = document.getElementById('q-text');
+  const qOptions = document.getElementById('q-options');
+  const qFeedback = document.getElementById('q-feedback');
+  const progressLabel = document.getElementById('progress-label');
+  const progressFill = document.getElementById('progress-fill');
+  const scoreLabel = document.getElementById('score-label');
+  const btnNext = document.getElementById('btn-next');
+
+  document.getElementById('btn-start').addEventListener('click', () => {
+    screenStart.classList.add('hidden');
+    screenQuiz.classList.remove('hidden');
+    renderQuestion();
+  });
+
+  document.getElementById('btn-replay').addEventListener('click', () => {
+    current = 0; score = 0; answered = false;
+    screenEnd.classList.add('hidden');
+    screenQuiz.classList.remove('hidden');
+    renderQuestion();
+  });
+
+  btnNext.addEventListener('click', () => {
+    current++;
+    if (current >= questions.length) {
+      showEnd();
+    } else {
+      renderQuestion();
+    }
+  });
+
+  function renderQuestion(){
+    answered = false;
+    const q = questions[current];
+    qTag.textContent = q.tag === 'STF' ? 'STF' : 'Educação digital';
+    qTag.className = 'tag ' + (q.tag === 'STF' ? 'stf' : 'dig');
+    qText.textContent = q.text;
+    progressLabel.textContent = `Pergunta ${current + 1} de ${questions.length}`;
+    progressFill.style.width = `${((current) / questions.length) * 100 + 10}%`;
+    scoreLabel.textContent = `${score} pts`;
+
+    qFeedback.className = 'feedback';
+    qFeedback.textContent = '';
+    btnNext.classList.add('hidden');
+
+    qOptions.innerHTML = '';
+    const letters = ['A', 'B', 'C', 'D'];
+    q.options.forEach((opt, i) => {
+      const b = document.createElement('button');
+      b.className = 'option';
+      b.innerHTML = `<span class="k">${letters[i]}</span><span>${opt}</span>`;
+      b.addEventListener('click', () => handleAnswer(i, b));
+      qOptions.appendChild(b);
+    });
+  }
+
+  function handleAnswer(i, btnEl){
+    if (answered) return;
+    answered = true;
+    const q = questions[current];
+    const allBtns = Array.from(qOptions.children);
+
+    allBtns.forEach((b, idx) => {
+      b.disabled = true;
+      if (idx === q.correct) b.classList.add('correct');
+      else if (idx === i) b.classList.add('wrong');
+      else b.classList.add('dim');
+    });
+
+    const isCorrect = i === q.correct;
+    if (isCorrect) score++;
+
+    qFeedback.classList.add('show');
+    qFeedback.classList.toggle('is-wrong', !isCorrect);
+    qFeedback.innerHTML = `<strong>${isCorrect ? 'Isso mesmo.' : 'Quase.'}</strong> ${q.explain}`;
+
+    scoreLabel.textContent = `${score} pts`;
+    progressFill.style.width = `${((current + 1) / questions.length) * 100}%`;
+    btnNext.textContent = current === questions.length - 1 ? 'Ver resultado' : 'Próxima pergunta';
+    btnNext.classList.remove('hidden');
+  }
+
+  function showEnd(){
+    screenQuiz.classList.add('hidden');
+    screenEnd.classList.remove('hidden');
+    document.getElementById('final-score').textContent = score;
+
+    let verdict;
+    if (score <= 3) {
+      verdict = "Esse território ainda é novo pra você — e tá tudo bem, é exatamente pra isso que existe o nosso estande. Vem trocar uma ideia com a gente sobre STF e vida digital.";
+    } else if (score <= 6) {
+      verdict = "Bom começo! Você já sabe reconhecer os sinais certos, tanto no Direito quanto na hora de duvidar de uma notícia. Dá pra ir além.";
+    } else if (score <= 8) {
+      verdict = "Muito bem! Você entende como o STF funciona e sabe se proteger de armadilhas comuns na internet.";
+    } else {
+      verdict = "Excelente! Você domina tanto os fundamentos do STF quanto boas práticas de educação digital crítica. Direito e tecnologia, na medida certa.";
+    }
+    document.getElementById('verdict-text').textContent = verdict;
+  }
+})();
+</script>
+
+</body>
+</html>
