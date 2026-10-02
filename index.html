@@ -247,9 +247,11 @@
 
   .foot-row{
     display:flex;
-    justify-content:flex-end;
+    justify-content:space-between;
+    align-items:center;
     margin-top: 22px;
   }
+  .nav-hide{ visibility:hidden; pointer-events:none; }
 
   /* --- start / end screens --- */
   .center-block{ text-align:left; }
@@ -344,14 +346,14 @@
     <!-- START SCREEN -->
     <div id="screen-start" class="center-block">
       <h1>Jurista de Programa Quiz</h1>
-      <p class="lede">Você conhece seus direitos digitais? Um quiz rápido sobre o Supremo Tribunal Federal e sobre como pensar com mais crítica na internet — desinformação, dados pessoais, algoritmos e por aí vai. 16 perguntas, ida e volta.</p>
+      <p class="lede">Você conhece seus direitos digitais? Um quiz rápido sobre o Supremo Tribunal Federal e sobre como pensar com mais crítica na internet.</p>
       <button class="btn btn-primary" id="btn-start">Começar o quiz</button>
     </div>
 
     <!-- QUIZ SCREEN -->
     <div id="screen-quiz" class="hidden">
       <div class="progress-row">
-        <span id="progress-label">Pergunta 1 de 10</span>
+        <span id="progress-label">Pergunta 1 de 16</span>
         <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
         <span id="score-label">0 pts</span>
       </div>
@@ -364,14 +366,15 @@
       <div class="feedback" id="q-feedback"></div>
 
       <div class="foot-row">
-        <button class="btn btn-primary hidden" id="btn-next">Próxima pergunta</button>
+        <button class="btn btn-ghost nav-hide" id="btn-back">← Voltar</button>
+        <button class="btn btn-primary nav-hide" id="btn-next">Próxima pergunta</button>
       </div>
     </div>
 
     <!-- END SCREEN -->
     <div id="screen-end" class="hidden center-block">
       <h1>Resultado</h1>
-      <div class="score-display"><span id="final-score">0</span><span class="score-of">/10</span></div>
+      <div class="score-display"><span id="final-score">0</span><span class="score-of">/16</span></div>
       <p class="verdict" id="verdict-text"></p>
       <button class="btn btn-primary" id="btn-replay">Jogar de novo</button>
       <div class="qr-block">
@@ -577,7 +580,7 @@
 
   let current = 0;
   let score = 0;
-  let answered = false;
+  let answers = new Array(questions.length).fill(null);
 
   const screenStart = document.getElementById('screen-start');
   const screenQuiz = document.getElementById('screen-quiz');
@@ -591,6 +594,11 @@
   const progressFill = document.getElementById('progress-fill');
   const scoreLabel = document.getElementById('score-label');
   const btnNext = document.getElementById('btn-next');
+  const btnBack = document.getElementById('btn-back');
+
+  function isAnswered(){
+    return answers[current] !== null && answers[current] !== undefined;
+  }
 
   document.getElementById('btn-start').addEventListener('click', () => {
     screenStart.classList.add('hidden');
@@ -599,34 +607,63 @@
   });
 
   document.getElementById('btn-replay').addEventListener('click', () => {
-    current = 0; score = 0; answered = false;
+    current = 0; score = 0; answers = new Array(questions.length).fill(null);
     screenEnd.classList.add('hidden');
     screenQuiz.classList.remove('hidden');
     renderQuestion();
   });
 
-  btnNext.addEventListener('click', () => {
+  function goNext(){
+    if (!isAnswered()) return;
     current++;
     if (current >= questions.length) {
       showEnd();
     } else {
       renderQuestion();
     }
+  }
+  function goBack(){
+    if (current === 0) return;
+    current--;
+    renderQuestion();
+  }
+  btnNext.addEventListener('click', goNext);
+  btnBack.addEventListener('click', goBack);
+
+  // --- keyboard navigation: ↑/↓ choose an option, ←/→ move between questions, Enter confirms (native button behavior) ---
+  document.addEventListener('keydown', (e) => {
+    if (screenQuiz.classList.contains('hidden')) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveOptionFocus(e.key === 'ArrowDown' ? 1 : -1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      goNext();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      goBack();
+    }
   });
 
+  function moveOptionFocus(delta){
+    const opts = Array.from(qOptions.children).filter(b => !b.disabled);
+    if (opts.length === 0) return;
+    const activeIdx = opts.indexOf(document.activeElement);
+    let next = activeIdx === -1 ? 0 : activeIdx + delta;
+    next = Math.max(0, Math.min(opts.length - 1, next));
+    opts[next].focus();
+  }
+
   function renderQuestion(){
-    answered = false;
     const q = questions[current];
     qTag.textContent = q.tag === 'STF' ? 'STF' : 'Educação digital';
     qTag.className = 'tag ' + (q.tag === 'STF' ? 'stf' : 'dig');
     qText.textContent = q.text;
     progressLabel.textContent = `Pergunta ${current + 1} de ${questions.length}`;
-    progressFill.style.width = `${((current) / questions.length) * 100 + 10}%`;
     scoreLabel.textContent = `${score} pts`;
 
     qFeedback.className = 'feedback';
     qFeedback.textContent = '';
-    btnNext.classList.add('hidden');
 
     qOptions.innerHTML = '';
     const letters = ['A', 'B', 'C', 'D'];
@@ -634,35 +671,55 @@
       const b = document.createElement('button');
       b.className = 'option';
       b.innerHTML = `<span class="k">${letters[i]}</span><span>${opt}</span>`;
-      b.addEventListener('click', () => handleAnswer(i, b));
+      b.addEventListener('click', () => handleAnswer(i));
       qOptions.appendChild(b);
     });
+
+    if (isAnswered()) {
+      const selected = answers[current];
+      applyAnswerVisuals(selected, q);
+      showFeedback(selected, q);
+      progressFill.style.width = `${((current + 1) / questions.length) * 100}%`;
+    } else {
+      progressFill.style.width = `${(current / questions.length) * 100 + 10}%`;
+    }
+    updateNavButtons();
   }
 
-  function handleAnswer(i, btnEl){
-    if (answered) return;
-    answered = true;
-    const q = questions[current];
+  function applyAnswerVisuals(selectedIndex, q){
     const allBtns = Array.from(qOptions.children);
-
     allBtns.forEach((b, idx) => {
       b.disabled = true;
       if (idx === q.correct) b.classList.add('correct');
-      else if (idx === i) b.classList.add('wrong');
+      else if (idx === selectedIndex) b.classList.add('wrong');
       else b.classList.add('dim');
     });
+  }
 
-    const isCorrect = i === q.correct;
-    if (isCorrect) score++;
-
+  function showFeedback(selectedIndex, q){
+    const isCorrect = selectedIndex === q.correct;
     qFeedback.classList.add('show');
     qFeedback.classList.toggle('is-wrong', !isCorrect);
     qFeedback.innerHTML = `<strong>${isCorrect ? 'Isso mesmo.' : 'Quase.'}</strong> ${q.explain}`;
+  }
 
+  function updateNavButtons(){
+    btnBack.classList.toggle('nav-hide', current === 0);
+    btnNext.classList.toggle('nav-hide', !isAnswered());
+    btnNext.textContent = current === questions.length - 1 ? 'Ver resultado' : 'Próxima pergunta';
+  }
+
+  function handleAnswer(i){
+    if (isAnswered()) return;
+    const q = questions[current];
+    answers[current] = i;
+    if (i === q.correct) score++;
+
+    applyAnswerVisuals(i, q);
+    showFeedback(i, q);
     scoreLabel.textContent = `${score} pts`;
     progressFill.style.width = `${((current + 1) / questions.length) * 100}%`;
-    btnNext.textContent = current === questions.length - 1 ? 'Ver resultado' : 'Próxima pergunta';
-    btnNext.classList.remove('hidden');
+    updateNavButtons();
   }
 
   function showEnd(){
